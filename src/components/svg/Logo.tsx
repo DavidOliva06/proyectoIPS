@@ -5,13 +5,14 @@ const SvgLogo = (props: SVGProps<SVGSVGElement>) => (
     xmlns="http://www.w3.org/2000/svg"
     width={20}
     height={20}
+    viewBox="0 0 24 24"
     fill="currentColor"
-    stroke="currentColor"
-    viewBox="0 0 428 389.11"
     {...props}
   >
-    <circle cx={214.15} cy={181} r={171} fill="none" strokeMiterlimit={10} strokeWidth={20} />
-    <path d="M413 134.11H15.29a15 15 0 0 0-15 15v15.3C.12 168 0 171.52 0 175.11c0 118.19 95.81 214 214 214 116.4 0 211.1-92.94 213.93-208.67 0-.44.07-.88.07-1.33v-30a15 15 0 0 0-15-15Z" />
+    <rect x="2" y="12" width="4" height="8" rx="1" opacity="0.5" />
+    <rect x="8" y="7" width="4" height="13" rx="1" opacity="0.75" />
+    <rect x="14" y="3" width="4" height="17" rx="1" />
+    <path d="M3 11 L9 7.5 L15 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
   </svg>
 );
 export default SvgLogo;

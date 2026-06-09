@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmallMetrics — Página de Prueba</title>
+
+  <!-- ╔══════════════════════════════════════════════════════════╗
+       ║  INTERCEPTOR — debe estar ANTES del tracker script      ║
+       ║  Captura todos los payloads enviados a /api/send        ║
+       ╚══════════════════════════════════════════════════════════╝ -->
+  <script>
+    window.__sm_log = [];
+    const _fetch = window.fetch;
+    window.fetch = function (url, opts) {
+      const urlStr = typeof url === 'string' ? url : url?.url || '';
+      if (urlStr.includes('/api/send')) {
+        try {
+          const body = JSON.parse(opts?.body || '{}');
+          window.__sm_log.unshift({ ts: new Date().toISOString(), ...body });
+          renderLog();
+        } catch (_) {}
+      }
+      return _fetch.apply(this, arguments);
+    };
+  </script>
+
+  <!-- ╔══════════════════════════════════════════════════════════╗
+       ║  TRACKER — apunta al servidor local                     ║
+       ║  Reemplaza data-website-id con el ID de tu sitio        ║
+       ╚══════════════════════════════════════════════════════════╝ -->
+  <script
+    async
+    defer
+    src="http://localhost:3000/script.js"
+    data-website-id="4e59dde7-9740-4e36-94ae-2e90d0b994de"
+    data-performance="true"
+  ></script>
+
+  <style>
+    :root {
+      --brand:       #1a7a52;
+      --brand-light: #e6f4ee;
+      --brand-dark:  #0f4f34;
+      --bg:          #f5f7f6;
+      --surface:     #ffffff;
+      --border:      #e2e8e5;
+      --text:        #1a2e24;
+      --muted:       #6b8078;
+      --disabled:    #a8bdb6;
+      --good:        #16a34a;
+      --warn:        #ca8a04;
+      --bad:         #dc2626;
+      --radius:      8px;
+      --font: 'Inter', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    header {
+      background: var(--brand-dark);
+      color: white;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    header svg { flex-shrink: 0; }
+    header h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+    header span { font-size: 12px; opacity: 0.65; margin-left: auto; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 24px; display: grid; gap: 24px; }
+
+    /* ── Cards ────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .card-body { padding: 20px; }
+
+    /* ── Status badge ─────────────────────────────────── */
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-ok   { background: #dcfce7; color: var(--good); }
+    .badge-warn { background: #fef9c3; color: var(--warn); }
+    .badge-err  { background: #fee2e2; color: var(--bad); }
+
+    /* ── Detection grid ───────────────────────────────── */
+    .detect-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .detect-item {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .detect-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--disabled);
+    }
+    .detect-value {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .detect-value.missing { color: var(--disabled); font-style: italic; }
+
+    /* ── Event buttons ────────────────────────────────── */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .event-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .event-card:hover { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+    .event-card h3 { font-size: 13px; font-weight: 600; }
+    .event-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .event-card code {
+      font-size: 11px;
+      background: var(--bg);
+      border-radius: 4px;
+      padding: 6px 10px;
+      display: block;
+      white-space: pre-wrap;
+      border: 1px solid var(--border);
+      color: var(--brand-dark);
+    }
+
+    /* ── Buttons ──────────────────────────────────────── */
+    button, .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-primary { background: var(--brand); color: white; }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-secondary { background: var(--bg); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--brand-light); border-color: var(--brand); }
+    .btn-fired {
+      background: #dcfce7 !important;
+      color: var(--good) !important;
+      border-color: #86efac !important;
+    }
+
+    /* ── Form test ────────────────────────────────────── */
+    form.test-form { display: flex; flex-direction: column; gap: 12px; }
+    form.test-form input, form.test-form select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--bg);
+      width: 100%;
+    }
+    form.test-form input:focus, form.test-form select:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px var(--brand-light);
+    }
+    form.test-form label { font-size: 12px; font-weight: 500; color: var(--muted); }
+
+    /* ── UTM test ─────────────────────────────────────── */
+    .utm-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .utm-links a {
+      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .utm-links a:hover { background: var(--brand-light); border-color: var(--brand); }
+
+    /* ── Log ──────────────────────────────────────────── */
+    #log-container { font-size: 12px; }
+    .log-empty {
+      text-align: center;
+      color: var(--disabled);
+      padding: 32px;
+      font-style: italic;
+    }
+    .log-entry {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: grid;
+      grid-template-columns: 80px 90px 1fr;
+      gap: 12px;
+      align-items: start;
+      animation: fadeIn 0.3s ease;
+    }
+    .log-entry:last-child { border-bottom: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+    .log-time { color: var(--disabled); font-size: 11px; padding-top: 1px; }
+    .log-type { }
+    .log-payload {
+      color: var(--brand-dark);
+      word-break: break-all;
+      line-height: 1.6;
+    }
+    .log-payload strong { color: var(--text); }
+    .log-key { color: var(--muted); }
+
+    /* ── Tabs ─────────────────────────────────────────── */
+    .tabs { display: flex; gap: 4px; }
+    .tab {
+      padding: 6px 14px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+    .tab.active, .tab:hover {
+      background: var(--brand-light);
+      color: var(--brand);
+      border-color: var(--brand);
+    }
+
+    /* ── Vitals ───────────────────────────────────────── */
+    .vitals-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+    }
+    .vital-item {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+    .vital-name { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+    .vital-value { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 4px 0; }
+    .vital-desc { font-size: 10px; color: var(--disabled); }
+    .vital-good  { color: var(--good); }
+    .vital-warn  { color: var(--warn); }
+    .vital-bad   { color: var(--bad); }
+    .vital-pending { color: var(--disabled); }
+
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 640px) {
+      header { padding: 12px 16px; }
+      main { padding: 16px; }
+      .log-entry { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ HEADER ═══════ -->
+<header>
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+    <rect x="2" y="12" width="4" height="8" rx="1" opacity="0.5"/>
+    <rect x="8" y="7" width="4" height="13" rx="1" opacity="0.75"/>
+    <rect x="14" y="3" width="4" height="17" rx="1"/>
+    <path d="M3 11 L9 7.5 L15 4" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  </svg>
+  <h1>SmallMetrics — Página de Prueba</h1>
+  <span id="tracker-status">Cargando tracker…</span>
+</header>
+
+<main>
+
+  <!-- ═══════════════════════════ 1. ESTADO DEL TRACKER ══ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Estado del Tracker</span>
+      <div class="tabs">
+        <div class="tab active" onclick="showSection('auto')">Auto-detección</div>
+        <div class="tab" onclick="showSection('vitals')">Web Vitals</div>
+        <div class="tab" onclick="showSection('session')">Sesión</div>
+      </div>
+    </div>
+    <div class="card-body">
+
+      <!-- Auto-detection -->
+      <div id="section-auto">
+        <div class="detect-grid" id="detect-grid">
+          <!-- Se llena por JS -->
+        </div>
+      </div>
+
+      <!-- Web Vitals -->
+      <div id="section-vitals" style="display:none">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+          Métricas Core Web Vitals capturadas en esta sesión
+          (requiere <code style="background:var(--bg);padding:1px 4px;border-radius:3px">data-performance="true"</code> en el script).
+        </p>
+        <div class="vitals-grid" id="vitals-grid">
+          <!-- Se llena por JS -->
+        </div>
+      </div>
+
+      <!-- Session info -->
+      <div id="section-session" style="display:none">
+        <div class="detect-grid" id="session-grid">
+          <!-- Se llena por JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ 2. UTM & CLICK IDs ════ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">UTM & Click IDs — Detección de Campaña</span>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+      <p style="font-size:12px;color:var(--muted)">
+        Abre esta página con los parámetros de campaña para probar la detección automática.
+      </p>
+      <div class="utm-links">
+        <a href="?utm_source=google&utm_medium=cpc&utm_campaign=brand&utm_content=banner&utm_term=analytics">
+          Google Ads (UTM completo)
+        </a>
+        <a href="?utm_source=facebook&utm_medium=social&utm_campaign=reactivacion&fbclid=fb_test_123">
+          Facebook (UTM + fbclid)
+        </a>
+        <a href="?utm_source=linkedin&utm_medium=email&utm_campaign=newsletter&li_fat_id=li_test_456">
+          LinkedIn (UTM + li_fat_id)
+        </a>
+        <a href="?gclid=google_click_test_789">
+          Google Click ID (gclid)
+        </a>
+        <a href="?utm_source=tiktok&ttclid=tiktok_test">
+          TikTok (ttclid)
+        </a>
+        <a href="?msclkid=bing_test_000">
+          Bing Ads (msclkid)
+        </a>
+        <a href="?">
+          Limpiar parámetros
+        </a>
+      </div>
+      <div id="utm-detected" class="detect-grid" style="margin-top:4px"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ 3. EVENTOS MANUALES ═══ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Eventos — API Manual</span>
+    </div>
+    <div class="card-body">
+      <div class="events-grid">
+
+        <!-- Page view -->
+        <div class="event-card">
+          <h3>Page View manual</h3>
+          <p>Dispara un pageview sin navegar. Útil en SPAs donde la URL cambia sin recargar.</p>
+          <code>umami.track()</code>
+          <button class="btn btn-primary" onclick="fireEvent(this, () => window.umami?.track())">
+            Disparar pageview
+          </button>
+        </div>
+
+        <!-- Custom event simple -->
+        <div class="event-card">
+          <h3>Evento simple</h3>
+          <p>Registra un evento con nombre sin propiedades adicionales.</p>
+          <code>umami.track('boton-cta')</code>
+          <button class="btn btn-primary" onclick="fireEvent(this, () => window.umami?.track('boton-cta'))">
+            Disparar evento
+          </button>
+        </div>
+
+        <!-- Evento con datos -->
+        <div class="event-card">
+          <h3>Evento con propiedades</h3>
+          <p>Registra un evento con datos personalizados (plan, valor, etc.).</p>
+          <code>umami.track('upgrade', {
+  plan: 'pro',
+  precio: 29.99,
+  moneda: 'USD'
+})</code>
+          <button class="btn btn-primary" onclick="fireEvent(this, () => window.umami?.track('upgrade', { plan: 'pro', precio: 29.99, moneda: 'USD' }))">
+            Disparar con datos
+          </button>
+        </div>
+
+        <!-- Revenue -->
+        <div class="event-card">
+          <h3>Evento de revenue</h3>
+          <p>Registra una conversión con valor económico.</p>
+          <code>umami.track('compra', {
+  revenue: 149.00,
+  producto: 'plan-anual',
+  descuento: 'PROMO20'
+})</code>
+          <button class="btn btn-primary" onclick="fireEvent(this, () => window.umami?.track('compra', { revenue: 149.00, producto: 'plan-anual', descuento: 'PROMO20' }))">
+            Registrar venta
+          </button>
+        </div>
+
+        <!-- Custom URL -->
+        <div class="event-card">
+          <h3>Pageview con URL personalizada</h3>
+          <p>Override de URL y título para tracking de pasos en un flujo.</p>
+          <code>umami.track(props => ({
+  ...props,
+  url: '/checkout/paso-2',
+  title: 'Checkout — Datos de pago'
+}))</code>
+          <button class="btn btn-primary" onclick="fireEvent(this, () => window.umami?.track(p => ({ ...p, url: '/checkout/paso-2', title: 'Checkout — Datos de pago' })))">
+            Simular paso SPA
+          </button>
+        </div>
+
+        <!-- Identify -->
+        <div class="event-card">
+          <h3>Identify — identificar usuario</h3>
+          <p>Asocia la sesión anónima con un usuario conocido (post-login).</p>
+          <code>umami.identify('user-42', {
+  nombre: 'Ana García',
+  plan: 'pro',
+  empresa: 'ACME S.A.'
+})</code>
+          <button class="btn btn-primary" onclick="fireEvent(this, () => window.umami?.identify('user-42', { nombre: 'Ana García', plan: 'pro', empresa: 'ACME S.A.' }))">
+            Identificar usuario
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ 4. DATA ATTRIBUTES ════ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Eventos — Atributos HTML (data-umami-event)</span>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+      <p style="font-size:12px;color:var(--muted)">
+        El tracker escucha clics en elementos con <code style="background:var(--bg);padding:1px 4px;border-radius:3px">data-umami-event</code>
+        sin necesidad de JavaScript adicional.
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-secondary"
+          data-umami-event="click-demo"
+          data-umami-event-seccion="header"
+          data-umami-event-variante="A">
+          Click simple (data attr)
+        </button>
+
+        <button class="btn btn-secondary"
+          data-umami-event="descarga-reporte"
+          data-umami-event-formato="pdf"
+          data-umami-event-paginas="12">
+          Descarga reporte (PDF)
+        </button>
+
+        <a class="btn btn-secondary"
+          href="#outbound-test"
+          data-umami-event="link-externo"
+          data-umami-event-destino="docs">
+          Link con tracking (a href)
+        </a>
+
+        <button class="btn btn-secondary"
+          data-umami-event="video-play"
+          data-umami-event-duracion="180"
+          data-umami-event-titulo="demo-product">
+          Reproducir video (simulado)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ 5. FORM TRACKING ══════ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Tracking de Formulario</span>
+    </div>
+    <div class="card-body">
+      <form class="test-form" onsubmit="handleFormSubmit(event)">
+        <div>
+          <label>Nombre</label>
+          <input type="text" name="nombre" placeholder="Juan Pérez" />
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" name="email" placeholder="juan@empresa.com" />
+        </div>
+        <div>
+          <label>Plan de interés</label>
+          <select name="plan">
+            <option value="">Seleccionar...</option>
+            <option value="starter">Starter — gratis</option>
+            <option value="pro">Pro — $29/mes</option>
+            <option value="business">Business — $79/mes</option>
+          </select>
+        </div>
+        <div>
+          <label>Empresa</label>
+          <input type="text" name="empresa" placeholder="ACME S.A." />
+        </div>
+        <div style="display:flex;gap:8px">
+          <button type="submit" class="btn btn-primary">Enviar y rastrear conversión</button>
+          <button type="reset" class="btn btn-secondary">Limpiar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ 6. BEFORE SEND FILTER ═ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">beforeSend — Filtro / Enriquecimiento</span>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+      <p style="font-size:12px;color:var(--muted)">
+        Intercepta cada payload antes de enviarlo. Puede modificarlo, enriquecerlo, o retornar
+        <code style="background:var(--bg);padding:1px 4px;border-radius:3px">null</code> para cancelar.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="activateEnrich()">
+          Activar enriquecimiento (+ empresa)
+        </button>
+        <button class="btn btn-secondary" onclick="activateFilter()">
+          Activar filtro (bloquear pageviews)
+        </button>
+        <button class="btn btn-secondary" onclick="deactivateBeforeSend()">
+          Desactivar filtro
+        </button>
+      </div>
+      <div id="beforesend-status" class="detect-item">
+        <span class="detect-label">Estado actual</span>
+        <span class="detect-value missing" id="beforesend-state">Sin filtro activo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ 7. LOG DE EVENTOS ══════ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Log en tiempo real — Payloads enviados a /api/send</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="log-count" class="badge badge-warn">0 eventos</span>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px" onclick="clearLog()">
+          Limpiar
+        </button>
+      </div>
+    </div>
+    <div id="log-container">
+      <div class="log-empty" id="log-empty">
+        Aún no hay eventos — interactúa con la página para ver los payloads aquí.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  DETECCIÓN — poblar cards con datos del contexto actual
+// ══════════════════════════════════════════════════════════════
+
+function getQueryParams() {
+  return Object.fromEntries(new URLSearchParams(location.search));
+}
+
+function renderDetection() {
+  const params = getQueryParams();
+  const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  const CLICK_IDS = ['gclid', 'fbclid', 'msclkid', 'ttclid', 'li_fat_id', 'twclid'];
+
+  const items = [
+    { label: 'URL',           value: location.pathname + location.search },
+    { label: 'Hostname',      value: location.hostname },
+    { label: 'Título',        value: document.title },
+    { label: 'Referrer',      value: document.referrer || null },
+    { label: 'Idioma',        value: navigator.language },
+    { label: 'Pantalla',      value: `${screen.width}×${screen.height}` },
+    { label: 'Do Not Track',  value: navigator.doNotTrack === '1' ? 'Activado' : 'No' },
+    { label: 'User Agent',    value: navigator.userAgent.substring(0, 60) + '…' },
+  ];
+
+  const grid = document.getElementById('detect-grid');
+  grid.innerHTML = items.map(i => `
+    <div class="detect-item">
+      <span class="detect-label">${i.label}</span>
+      <span class="detect-value ${i.value ? '' : 'missing'}">${i.value || 'No detectado'}</span>
+    </div>`).join('');
+
+  // UTM en su propio grid
+  const utmAll = [...UTM_KEYS, ...CLICK_IDS];
+  const utmFound = utmAll.filter(k => params[k]);
+  const utmGrid = document.getElementById('utm-detected');
+  if (utmFound.length) {
+    utmGrid.innerHTML = utmFound.map(k => `
+      <div class="detect-item">
+        <span class="detect-label">${k}</span>
+        <span class="detect-value">${params[k]}</span>
+      </div>`).join('');
+  } else {
+    utmGrid.innerHTML = `<p style="font-size:12px;color:var(--disabled);padding:4px 0">Ningún parámetro de campaña en la URL actual.</p>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  WEB VITALS — leer si el tracker los capturó
+// ══════════════════════════════════════════════════════════════
+const VITALS_DEF = {
+  ttfb: { name: 'TTFB', desc: 'Time to First Byte',        good: 800,  poor: 1800 },
+  fcp:  { name: 'FCP',  desc: 'First Contentful Paint',    good: 1800, poor: 3000 },
+  lcp:  { name: 'LCP',  desc: 'Largest Contentful Paint',  good: 2500, poor: 4000 },
+  inp:  { name: 'INP',  desc: 'Interaction to Next Paint', good: 200,  poor: 500  },
+  cls:  { name: 'CLS',  desc: 'Cumulative Layout Shift',   good: 0.1,  poor: 0.25 },
+};
+
+function renderVitals(data) {
+  const grid = document.getElementById('vitals-grid');
+  grid.innerHTML = Object.entries(VITALS_DEF).map(([key, def]) => {
+    const val = data?.[key];
+    let cls = 'vital-pending', display = '…';
+    if (val != null) {
+      display = key === 'cls' ? val.toFixed(3) : `${val}ms`;
+      cls = val <= def.good ? 'vital-good' : val <= def.poor ? 'vital-warn' : 'vital-bad';
+    }
+    return `
+      <div class="vital-item">
+        <div class="vital-name">${def.name}</div>
+        <div class="vital-value ${cls}">${display}</div>
+        <div class="vital-desc">${def.desc}</div>
+      </div>`;
+  }).join('');
+}
+
+// Capturar vitals del log en tiempo real
+function extractVitals() {
+  const perf = window.__sm_log.find(e => e.type === 'performance');
+  if (perf) renderVitals(perf.payload);
+  else renderVitals(null);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SESSION INFO
+// ══════════════════════════════════════════════════════════════
+function renderSession() {
+  const sess = window.umami?.getSession?.() || null;
+  const grid = document.getElementById('session-grid');
+  if (!sess) {
+    grid.innerHTML = `<p class="detect-value missing">Sesión no disponible aún (tracker cargando…)</p>`;
+    return;
+  }
+  const items = [
+    { label: 'Website ID', value: sess.website },
+    { label: 'Cache token', value: sess.cache ? sess.cache.substring(0, 32) + '…' : null },
+  ];
+  grid.innerHTML = items.map(i => `
+    <div class="detect-item">
+      <span class="detect-label">${i.label}</span>
+      <span class="detect-value ${i.value ? '' : 'missing'}">${i.value || 'No disponible'}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════════════
+function showSection(id) {
+  ['auto', 'vitals', 'session'].forEach(s => {
+    document.getElementById(`section-${s}`).style.display = s === id ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['auto', 'vitals', 'session'][i] === id);
+  });
+  if (id === 'vitals') extractVitals();
+  if (id === 'session') renderSession();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  LOG DE PAYLOADS
+// ══════════════════════════════════════════════════════════════
+function renderLog() {
+  const log = window.__sm_log;
+  const container = document.getElementById('log-container');
+  const empty = document.getElementById('log-empty');
+  const count = document.getElementById('log-count');
+
+  count.textContent = `${log.length} evento${log.length !== 1 ? 's' : ''}`;
+  count.className = `badge ${log.length > 0 ? 'badge-ok' : 'badge-warn'}`;
+
+  if (log.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Solo renderizar la entrada más nueva (las anteriores ya están)
+  const latest = log[0];
+  const time = latest.ts?.split('T')[1]?.split('.')[0] || '—';
+  const typeBadge = latest.type === 'event'
+    ? '<span class="badge badge-ok">event</span>'
+    : latest.type === 'identify'
+    ? '<span class="badge badge-warn">identify</span>'
+    : '<span class="badge" style="background:#ede9fe;color:#7c3aed">performance</span>';
+
+  const p = latest.payload || {};
+  const fields = Object.entries(p)
+    .filter(([k]) => !['website', 'hostname', 'screen', 'language', 'browser', 'os', 'device'].includes(k))
+    .map(([k, v]) => `<span class="log-key">${k}:</span> <strong>${typeof v === 'object' ? JSON.stringify(v) : v}</strong>`)
+    .join(' &nbsp;·&nbsp; ');
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `
+    <span class="log-time">${time}</span>
+    <span class="log-type">${typeBadge}</span>
+    <span class="log-payload">${fields || '<em style="color:var(--disabled)">pageview</em>'}</span>`;
+
+  // Insertar al inicio
+  const firstChild = container.querySelector('.log-entry');
+  if (firstChild) container.insertBefore(entry, firstChild);
+  else container.appendChild(entry);
+}
+
+function clearLog() {
+  window.__sm_log = [];
+  document.querySelectorAll('.log-entry').forEach(e => e.remove());
+  document.getElementById('log-empty').style.display = '';
+  document.getElementById('log-count').textContent = '0 eventos';
+  document.getElementById('log-count').className = 'badge badge-warn';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  DISPARO DE EVENTOS (con feedback visual)
+// ══════════════════════════════════════════════════════════════
+function fireEvent(btn, fn) {
+  if (!window.umami) {
+    btn.textContent = '⚠ Tracker no cargado';
+    btn.className = 'btn btn-secondary';
+    return;
+  }
+  fn();
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Enviado';
+  btn.className = 'btn btn-fired';
+  setTimeout(() => {
+    btn.innerHTML = orig;
+    btn.className = 'btn btn-primary';
+  }, 1500);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  FORM SUBMIT
+// ══════════════════════════════════════════════════════════════
+function handleFormSubmit(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target));
+  if (window.umami) {
+    window.umami.track('form-lead', {
+      plan: data.plan || 'no-seleccionado',
+      tiene_empresa: !!data.empresa,
+    });
+    window.umami.identify(data.email || 'anon', {
+      nombre: data.nombre,
+      empresa: data.empresa,
+      plan_interes: data.plan,
+    });
+  }
+  const btn = e.target.querySelector('button[type=submit]');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Evento + identify disparados';
+  btn.className = 'btn btn-fired';
+  setTimeout(() => { btn.innerHTML = orig; btn.className = 'btn btn-primary'; }, 2000);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BEFORE SEND
+// ══════════════════════════════════════════════════════════════
+function activateEnrich() {
+  window.beforeSend = (type, payload) => {
+    payload.empresa_test = 'ACME';
+    payload.entorno = 'test-page';
+    return payload;
+  };
+  document.getElementById('beforesend-state').textContent = 'Enriquecimiento activo — agrega empresa_test y entorno';
+  document.getElementById('beforesend-state').classList.remove('missing');
+}
+function activateFilter() {
+  window.beforeSend = (type, payload) => {
+    if (type === 'event' && !payload.name) return null; // bloquea pageviews
+    return payload;
+  };
+  document.getElementById('beforesend-state').textContent = 'Filtro activo — pageviews bloqueados, eventos permitidos';
+  document.getElementById('beforesend-state').classList.remove('missing');
+}
+function deactivateBeforeSend() {
+  window.beforeSend = undefined;
+  document.getElementById('beforesend-state').textContent = 'Sin filtro activo';
+  document.getElementById('beforesend-state').classList.add('missing');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ESTADO DEL TRACKER (polling liviano)
+// ══════════════════════════════════════════════════════════════
+function checkTracker() {
+  const el = document.getElementById('tracker-status');
+  if (window.umami) {
+    el.innerHTML = '<span style="color:#86efac;font-weight:600">✓ Tracker activo</span>';
+  } else {
+    el.innerHTML = '<span style="color:#fca5a5">✗ Tracker no detectado — verifica data-website-id y que el servidor esté corriendo</span>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderDetection();
+  renderVitals(null);
+  renderSession();
+  setTimeout(checkTracker, 1500); // dar tiempo al script defer
+});
+</script>
+</body>
+</html>

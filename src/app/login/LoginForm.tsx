@@ -32,10 +32,17 @@ export function LoginForm() {
 
   return (
     <Column justifyContent="center" alignItems="center" gap="6">
-      <Icon size="lg">
+      <Icon size="lg" style={{ color: 'var(--sm-brand)' }}>
         <Logo />
       </Icon>
-      <Heading>umami</Heading>
+      <div style={{ textAlign: 'center' }}>
+        <Heading style={{ letterSpacing: '-0.03em' }}>
+          Small<span style={{ color: 'var(--sm-brand)' }}>Metrics</span>
+        </Heading>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          Analítica de negocio para equipos pequeños
+        </p>
+      </div>
       <Form onSubmit={handleSubmit} error={getErrorMessage(error)} style={{ minWidth: 300 }}>
         <FormField
           label={t(labels.username)}

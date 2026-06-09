@@ -93,7 +93,9 @@ export function SideNav(props: any) {
         <Row paddingX="3" alignItems="center" justifyContent="space-between" flexGrow="1">
           {!isCollapsed && (
             <IconLabel icon={<Logo />}>
-              <Text weight="bold">umami</Text>
+              <Text weight="bold" style={{ letterSpacing: '-0.02em' }}>
+                Small<span style={{ color: 'var(--sm-brand)' }}>Metrics</span>
+              </Text>
             </IconLabel>
           )}
           <PanelButton />

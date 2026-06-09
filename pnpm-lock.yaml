@@ -305,15 +305,13 @@ importers:
         version: 10.9.2(@swc/core@1.15.11(@swc/helpers@0.5.21))(@types/node@24.12.0)(typescript@5.9.3)
       tsup:
         specifier: ^8.5.0
-        version: 8.5.1(@swc/core@1.15.11(@swc/helpers@0.5.21))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1)
+        version: 8.5.1(@swc/core@1.15.11(@swc/helpers@0.5.21))(jiti@2.6.1)(postcss@8.5.8)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1)
       tsx:
         specifier: ^4.19.0
         version: 4.21.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-
-  dist: {}
 
 packages:
 
@@ -6011,6 +6009,7 @@ packages:
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -12030,7 +12029,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.1(@swc/core@1.15.11(@swc/helpers@0.5.21))(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1):
+  tsup@8.5.1(@swc/core@1.15.11(@swc/helpers@0.5.21))(jiti@2.6.1)(postcss@8.5.8)(supports-color@8.1.1)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.1):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.4)
       cac: 6.7.14

@@ -1,7 +1,10 @@
 :root {
   --font-family: var(--font-inter), sans-serif;
-  --primary: oklch(62.3% 0.214 259.815);
+  --primary: oklch(52% 0.148 162);
   --primary-foreground: oklch(98.5% 0 0);
+  --sm-brand: oklch(52% 0.148 162);
+  --sm-brand-light: oklch(92% 0.06 162);
+  --sm-brand-dark: oklch(38% 0.12 162);
 }
 
 html,

@@ -26,6 +26,44 @@ export function WebsitesPage() {
         <PageHeader title={t(labels.websites)}>
           {showActions && <WebsiteAddButton teamId={teamId} />}
         </PageHeader>
+
+        {/* SmallMetrics business KPI strip — placeholder */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 12,
+          }}
+        >
+          {[
+            { label: 'Visitas totales' },
+            { label: 'Tasa de conversión' },
+            { label: 'Ingresos estimados' },
+            { label: 'Nuevos usuarios' },
+          ].map(kpi => (
+            <div
+              key={kpi.label}
+              style={{
+                backgroundColor: 'var(--surface-base)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 8,
+                padding: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {kpi.label}
+              </span>
+              <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                —
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-disabled)' }}>En desarrollo</span>
+            </div>
+          ))}
+        </div>
+
         <Panel>
           <WebsitesDataTable teamId={teamId} showActions={showActions} />
         </Panel>

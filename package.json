@@ -1,8 +1,8 @@
 {
-  "name": "umami",
-  "version": "3.1.0",
-  "description": "A modern, privacy-focused alternative to Google Analytics.",
-  "author": "Umami Software, Inc. <hello@umami.is>",
+  "name": "small-metrics",
+  "version": "0.4.0",
+  "description": "Small Metrics — analytics for small businesses",
+  "author": "Test",
   "license": "MIT",
   "homepage": "https://umami.is",
   "repository": {
