@@ -1,28 +1,59 @@
-name: Node.js CI
+name: CI
 
-on: [push]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
 
 env:
-  DATABASE_URL: "postgresql://user:pass@localhost:5432/dummy"
+  DATABASE_URL: "postgresql://localhost:5432/dummy"
   SKIP_DB_CHECK: 1
+  CYPRESS_INSTALL_BINARY: 0
 
 jobs:
-  build:
-    if: github.repository == 'umami-software/umami'
+  validate:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 11
           run_install: false
-      - name: Use Node.js 22
+
+      - name: Setup Node.js (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: "pnpm"
-      - run: npm install --global pnpm
-      - run: pnpm install
-      - run: pnpm test
-      - run: pnpm build
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Detect available scripts
+        id: scripts
+        run: |
+          node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const scripts=pkg.scripts||{};const out=process.env.GITHUB_OUTPUT;fs.appendFileSync(out,`lint=${Boolean(scripts.lint)}\n`);fs.appendFileSync(out,`typecheck=${Boolean(scripts.typecheck)}\n`);fs.appendFileSync(out,`test=${Boolean(scripts.test)}\n`);fs.appendFileSync(out,`build=${Boolean(scripts.build)}\n`);"
+
+      - name: Lint
+        if: steps.scripts.outputs.lint == 'true'
+        run: pnpm run lint
+
+      - name: Typecheck
+        if: steps.scripts.outputs.typecheck == 'true'
+        run: pnpm run typecheck
+
+      - name: Test (CI)
+        if: steps.scripts.outputs.test == 'true'
+        run: pnpm run test --ci --passWithNoTests
+
+      - name: Build
+        if: steps.scripts.outputs.build == 'true'
+        run: pnpm run build

@@ -107,6 +107,42 @@ docker compose up --force-recreate -d
 
 ---
 
+## ⚙️ CI/CD Workflow
+
+### CI (validación automática)
+
+- El workflow de CI (`.github/workflows/ci.yml`) se ejecuta en:
+  - Cada `pull_request`
+  - Cada `push` a `master` (rama por defecto actual)
+- CI instala dependencias y ejecuta de forma condicional los scripts disponibles en `package.json`:
+  - `lint`
+  - `typecheck`
+  - `test` en modo CI
+  - `build`
+
+### CD (despliegue automático)
+
+- El workflow de CD (`.github/workflows/cd.yml`) se ejecuta al hacer `push` a `master`.
+- Tiene 2 jobs:
+  - `build`: valida que el proyecto compile correctamente.
+  - `deploy`: corre solo si `build` finaliza con éxito y usa `environment: production`.
+- El deploy está en modo placeholder seguro (no destructivo). Para activarlo, agrega pasos del proveedor elegido (Vercel/Netlify/Render/GitHub Pages).
+
+### Secretos/variables para activar despliegue real
+
+- Configura en GitHub Secrets (Repository/Environment):
+  - `DEPLOY_PROVIDER`
+  - `DEPLOY_TOKEN`
+- Ajusta el job `deploy` para ejecutar el comando real del proveedor usando esos secretos.
+
+### Flujo recomendado de ramas y PR
+
+- Trabaja en ramas `feature/*`.
+- Abre Pull Request hacia `master`.
+- Haz merge solo con CI en verde.
+
+---
+
 ## 🛟 Support
 
 <p align="center">

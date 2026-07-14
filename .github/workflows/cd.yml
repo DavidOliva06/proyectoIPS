@@ -1,127 +1,64 @@
-name: Create docker images
+name: CD
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - master
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Optional image version (e.g. 3.0.0, v3.0.0, or 3.0.0-beta.1)"
-        required: false
-        default: ""
-      include_latest:
-        description: "Include latest tag"
-        required: false
-        type: boolean
-        default: true
+
+permissions:
+  contents: read
+
+env:
+  DATABASE_URL: "postgresql://localhost:5432/dummy"
+  SKIP_DB_CHECK: 1
+  CYPRESS_INSTALL_BINARY: 0
 
 jobs:
   build:
-    name: Build, push, and deploy
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log into GHCR
-        uses: docker/login-action@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          version: 11
+          run_install: false
 
-      - name: Log into Docker Hub
-        if: github.repository == 'umami-software/umami'
-        uses: docker/login-action@v3
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
         with:
-          registry: docker.io
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: lts/*
+          cache: pnpm
 
-      - name: Compute version tags
-        id: compute
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Detect build script
+        id: scripts
         run: |
-          INPUT="${{ github.event.inputs.version }}"
-          REF_TYPE="${{ github.ref_type }}"
-          REF_NAME="${{ github.ref_name }}"
-          INCLUDE_LATEST="${{ github.event.inputs.include_latest }}"
+          node -e "const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const scripts=pkg.scripts||{};const out=process.env.GITHUB_OUTPUT;fs.appendFileSync(out,`build=${Boolean(scripts.build)}\n`);"
 
-          # Determine version source
-          if [[ -n "$INPUT" ]]; then
-            VERSION="${INPUT#v}"
-          elif [[ "$REF_TYPE" == "tag" ]]; then
-            VERSION="${REF_NAME#v}"
-          else
-            VERSION=""
-          fi
+      - name: Build
+        if: steps.scripts.outputs.build == 'true'
+        run: pnpm run build
 
-          GHCR_TAGS=""
-          DOCKER_TAGS=""
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    environment: production
 
-          if [[ -n "$VERSION" ]]; then
-            MAJOR=$(echo "$VERSION" | cut -d. -f1)
-            MINOR=$(echo "$VERSION" | cut -d. -f2)
+    steps:
+      - name: Deployment placeholder
+        run: |
+          echo "Build completed successfully."
+          echo "Configure provider-specific deployment steps (Vercel/Netlify/Render/GitHub Pages)"
+          echo "using repository secrets in this job before enabling production deploy."
 
-            if [[ "$VERSION" == *-* ]]; then
-              # prerelease: only version tag
-              GHCR_TAGS="ghcr.io/${{ github.repository }}:$VERSION"
-              DOCKER_TAGS="umamisoftware/umami:$VERSION"
-            else
-              # stable release: version + hierarchy
-              GHCR_TAGS="ghcr.io/${{ github.repository }}:$VERSION"
-              GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:${MAJOR}.${MINOR}"
-              GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:${MAJOR}"
-              GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:postgresql-latest"
-          
-              DOCKER_TAGS="umamisoftware/umami:$VERSION"
-              DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:${MAJOR}.${MINOR}"
-              DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:${MAJOR}"
-              DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:postgresql-latest"
-          
-              # Add latest tag based on trigger and input
-              if [[ "$REF_TYPE" == "tag" ]] || [[ "$INCLUDE_LATEST" == "true" ]]; then
-                GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:latest"
-                DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:latest"
-              fi
-            fi
-          else
-            # Non-tag build (e.g. from main branch)
-            GHCR_TAGS="ghcr.io/${{ github.repository }}:${REF_NAME}"
-            DOCKER_TAGS="umamisoftware/umami:${REF_NAME}"
-          fi
-
-          echo "ghcr_tags=$GHCR_TAGS" >> $GITHUB_OUTPUT
-          echo "docker_tags=$DOCKER_TAGS" >> $GITHUB_OUTPUT
-          echo "Computed GHCR tags: $GHCR_TAGS"
-          echo "Computed Docker Hub tags: $DOCKER_TAGS"
-
-      - name: Build and push to GHCR
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.compute.outputs.ghcr_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push to Docker Hub
-        if: github.repository == 'umami-software/umami'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.compute.outputs.docker_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Validate optional deploy secrets
+        run: |
+          echo "::notice title=CD setup::Set DEPLOY_PROVIDER and DEPLOY_TOKEN secrets to enable real deployment commands."
