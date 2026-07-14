@@ -40,12 +40,19 @@
     "change-password": "node scripts/change-password.js",
     "postbuild": "node scripts/postbuild.js",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "typecheck": "node scripts/typecheck.js",
+    "typecheck:update": "node scripts/typecheck.js --update",
+    "typecheck:raw": "tsc --noEmit",
     "cypress-open": "cypress open cypress run",
     "cypress-run": "cypress run cypress run",
     "seed-data": "tsx scripts/seed-data.ts",
     "lint": "biome lint .",
+    "lint:ci": "biome ci .",
     "format": "biome format --write .",
-    "check": "biome check --write"
+    "check": "biome check --write",
+    "verify": "npm-run-all lint:ci typecheck test:coverage"
   },
   "cacheDirectories": [
     ".next/cache"
@@ -89,7 +96,7 @@
     "kafkajs": "^2.1.0",
     "lucide-react": "^1.7.0",
     "maxmind": "^5.0.5",
-    "next": "16.2.4",
+    "next": "16.2.6",
     "next-intl": "4.8.3",
     "node-fetch": "^3.2.8",
     "npm-run-all": "^4.1.5",
@@ -154,5 +161,21 @@
     "tsup": "^8.5.0",
     "tsx": "^4.19.0",
     "typescript": "^5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "shell-quote@<1.8.4": "^1.8.4",
+      "d3-color@<3.1.0": "^3.1.0",
+      "defu@<6.1.5": "^6.1.5",
+      "fast-uri@<3.1.2": "^3.1.2",
+      "hono@<4.12.25": "^4.12.25",
+      "svgo@<3.3.3": "^3.3.3",
+      "@isaacs/brace-expansion@<5.0.1": "^5.0.1",
+      "minimatch@<3.1.4": "^3.1.4",
+      "minimatch@>=5.0.0 <5.1.8": "^5.1.8",
+      "minimatch@>=10.0.0 <10.2.3": "^10.2.3",
+      "picomatch@<2.3.2": "^2.3.2",
+      "picomatch@>=4.0.0 <4.0.4": "^4.0.4"
+    }
   }
 }

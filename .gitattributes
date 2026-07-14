@@ -1,0 +1,15 @@
+# biome.json enforces `lineEnding: "lf"`. Without this file, a Windows checkout
+# (core.autocrlf=true) writes CRLF into the working tree, so `biome ci` flags
+# every file locally while passing on the Linux runner. Pinning the working-tree
+# ending to LF makes local runs and CI agree.
+* text=auto eol=lf
+
+# Binaries must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.mmdb binary

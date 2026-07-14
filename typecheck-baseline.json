@@ -1,0 +1,15 @@
+{
+  "comment": "Pre-existing type errors, tolerated by scripts/typecheck.js. Fix them and run `pnpm typecheck:update` to shrink this file. Do not add to it.",
+  "errors": {
+    "src/app/(main)/boards/[boardId]/BoardShareCreateForm.tsx | TS2345 | Argument of type 'unknown' is not assignable to parameter of type 'string | Error'.": 1,
+    "src/app/(main)/console/[websiteId]/TestConsolePage.tsx | TS2339 | Property 'umami' does not exist on type 'Window & typeof globalThis'.": 11,
+    "src/app/(main)/links/LinkEditButton.tsx | TS2322 | Type '{ children: Element; href: string; title: string; \"aria-label\": string; variant: string; }' is not assignable to type 'IntrinsicAttributes & LinkButtonProps'.": 1,
+    "src/app/(main)/pixels/PixelEditButton.tsx | TS2322 | Type '{ children: Element; href: string; title: string; \"aria-label\": string; variant: string; }' is not assignable to type 'IntrinsicAttributes & LinkButtonProps'.": 1,
+    "src/app/(main)/websites/[websiteId]/@modal/(.)replays/[sessionId]/page.tsx | TS2322 | Type '{ websiteId: string; sessionId: string; }' is not assignable to type 'IntrinsicAttributes & ReplayModalProps'.": 1,
+    "src/components/common/CopyButton.tsx | TS2322 | Type '{ children: Element; variant: \"quiet\"; onPress: () => Promise<void>; title: string; \"aria-label\": string; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.": 1,
+    "src/components/common/FilterLink.tsx | TS2322 | Type '{ children: (Element | ReactNode)[]; alignItems: \"center\"; gap: true; fontWeight: string; color: \"muted\"; onMouseOver: () => void; onMouseOut: () => void; }' is not assignable to type 'IntrinsicAttributes & RowProps'.": 1,
+    "src/components/share/SimpleShareCreateForm.tsx | TS2345 | Argument of type 'unknown' is not assignable to parameter of type 'string | Error'.": 1,
+    "src/lib/db.ts | TS2339 | Property 'toJSON' does not exist on type 'BigInt'.": 1,
+    "src/lib/react.ts | TS2339 | Property 'children' does not exist on type 'unknown'.": 1
+  }
+}
