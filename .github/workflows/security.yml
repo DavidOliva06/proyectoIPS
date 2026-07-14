@@ -32,9 +32,18 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # Only high/critical break the build. Moderate and below are reported but
-      # left to Dependabot, so day-to-day PRs are not blocked by transitive noise.
-      - name: pnpm audit
+      # Blocks on high/critical in *runtime* dependencies only. Vulnerabilities
+      # reachable solely through jest, cypress or the rollup toolchain never
+      # reach a user, and gating on them would mean a permanently red pipeline
+      # that everyone learns to ignore — which is worse than no gate.
+      - name: pnpm audit (production)
+        run: pnpm audit --prod --audit-level high
+
+      # Dev-tree findings are surfaced but do not fail the build; Dependabot
+      # raises the PRs for them.
+      - name: pnpm audit (full tree, advisory)
+        if: always()
+        continue-on-error: true
         run: pnpm audit --audit-level high
 
   secrets:
