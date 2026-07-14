@@ -20,7 +20,11 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const BASELINE_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'typecheck-baseline.json');
+const BASELINE_PATH = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'typecheck-baseline.json',
+);
 const ERROR_LINE = /^(.+?)\((\d+),(\d+)\): error (TS\d+): (.*)$/;
 
 function runTsc() {
