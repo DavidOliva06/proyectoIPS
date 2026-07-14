@@ -40,12 +40,19 @@
     "change-password": "node scripts/change-password.js",
     "postbuild": "node scripts/postbuild.js",
     "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "typecheck": "node scripts/typecheck.js",
+    "typecheck:update": "node scripts/typecheck.js --update",
+    "typecheck:raw": "tsc --noEmit",
     "cypress-open": "cypress open cypress run",
     "cypress-run": "cypress run cypress run",
     "seed-data": "tsx scripts/seed-data.ts",
     "lint": "biome lint .",
+    "lint:ci": "biome ci .",
     "format": "biome format --write .",
-    "check": "biome check --write"
+    "check": "biome check --write",
+    "verify": "npm-run-all lint:ci typecheck test:coverage"
   },
   "cacheDirectories": [
     ".next/cache"

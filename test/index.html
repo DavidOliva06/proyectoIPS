@@ -780,7 +780,9 @@ function renderLog() {
 
 function clearLog() {
   window.__sm_log = [];
-  document.querySelectorAll('.log-entry').forEach(e => e.remove());
+  document.querySelectorAll('.log-entry').forEach(e => {
+    e.remove();
+  });
   document.getElementById('log-empty').style.display = '';
   document.getElementById('log-count').textContent = '0 eventos';
   document.getElementById('log-count').className = 'badge badge-warn';

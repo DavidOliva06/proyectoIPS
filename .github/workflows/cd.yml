@@ -1,25 +1,36 @@
-name: Create docker images
+name: CD
 
 on:
   push:
+    branches:
+      - master
     tags:
       - "v*.*.*"
   workflow_dispatch:
     inputs:
-      version:
-        description: "Optional image version (e.g. 3.0.0, v3.0.0, or 3.0.0-beta.1)"
-        required: false
-        default: ""
       include_latest:
-        description: "Include latest tag"
+        description: "Also push the :latest tag"
         required: false
         type: boolean
         default: true
 
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build:
-    name: Build, push, and deploy
+  # The deploy gate. Same pipeline as PRs run, reused rather than re-declared,
+  # so nothing can ship on a definition of "green" that PRs were not held to.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Build and push image
+    needs: ci
     runs-on: ubuntu-latest
+    # Wire branch/reviewer protection rules to this environment in
+    # Settings > Environments > production.
+    environment: production
     permissions:
       contents: read
       packages: write
@@ -40,88 +51,57 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Log into Docker Hub
-        if: github.repository == 'umami-software/umami'
-        uses: docker/login-action@v3
-        with:
-          registry: docker.io
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Compute version tags
+      - name: Compute image tags
         id: compute
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INCLUDE_LATEST: ${{ github.event.inputs.include_latest }}
         run: |
-          INPUT="${{ github.event.inputs.version }}"
-          REF_TYPE="${{ github.ref_type }}"
-          REF_NAME="${{ github.ref_name }}"
-          INCLUDE_LATEST="${{ github.event.inputs.include_latest }}"
+          set -euo pipefail
 
-          # Determine version source
-          if [[ -n "$INPUT" ]]; then
-            VERSION="${INPUT#v}"
-          elif [[ "$REF_TYPE" == "tag" ]]; then
+          # GHCR rejects uppercase in image paths; the owner/repo may contain it.
+          IMAGE="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+          SHA="$(git rev-parse --short HEAD)"
+
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            # Release: v1.2.3 -> :1.2.3, :1.2, :1 (+ :latest unless prerelease)
             VERSION="${REF_NAME#v}"
-          else
-            VERSION=""
-          fi
+            MAJOR="$(echo "$VERSION" | cut -d. -f1)"
+            MINOR="$(echo "$VERSION" | cut -d. -f2)"
 
-          GHCR_TAGS=""
-          DOCKER_TAGS=""
-
-          if [[ -n "$VERSION" ]]; then
-            MAJOR=$(echo "$VERSION" | cut -d. -f1)
-            MINOR=$(echo "$VERSION" | cut -d. -f2)
-
-            if [[ "$VERSION" == *-* ]]; then
-              # prerelease: only version tag
-              GHCR_TAGS="ghcr.io/${{ github.repository }}:$VERSION"
-              DOCKER_TAGS="umamisoftware/umami:$VERSION"
-            else
-              # stable release: version + hierarchy
-              GHCR_TAGS="ghcr.io/${{ github.repository }}:$VERSION"
-              GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:${MAJOR}.${MINOR}"
-              GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:${MAJOR}"
-              GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:postgresql-latest"
-          
-              DOCKER_TAGS="umamisoftware/umami:$VERSION"
-              DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:${MAJOR}.${MINOR}"
-              DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:${MAJOR}"
-              DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:postgresql-latest"
-          
-              # Add latest tag based on trigger and input
-              if [[ "$REF_TYPE" == "tag" ]] || [[ "$INCLUDE_LATEST" == "true" ]]; then
-                GHCR_TAGS="$GHCR_TAGS,ghcr.io/${{ github.repository }}:latest"
-                DOCKER_TAGS="$DOCKER_TAGS,umamisoftware/umami:latest"
+            TAGS="$IMAGE:$VERSION"
+            if [[ "$VERSION" != *-* ]]; then
+              TAGS="$TAGS,$IMAGE:${MAJOR}.${MINOR},$IMAGE:${MAJOR}"
+              if [[ "$INCLUDE_LATEST" != "false" ]]; then
+                TAGS="$TAGS,$IMAGE:latest"
               fi
             fi
           else
-            # Non-tag build (e.g. from main branch)
-            GHCR_TAGS="ghcr.io/${{ github.repository }}:${REF_NAME}"
-            DOCKER_TAGS="umamisoftware/umami:${REF_NAME}"
+            # Continuous deploy off master. :latest stays a release-only tag, so
+            # a mainline push can never masquerade as the newest release.
+            TAGS="$IMAGE:$REF_NAME,$IMAGE:sha-$SHA"
           fi
 
-          echo "ghcr_tags=$GHCR_TAGS" >> $GITHUB_OUTPUT
-          echo "docker_tags=$DOCKER_TAGS" >> $GITHUB_OUTPUT
-          echo "Computed GHCR tags: $GHCR_TAGS"
-          echo "Computed Docker Hub tags: $DOCKER_TAGS"
+          echo "tags=$TAGS" >> "$GITHUB_OUTPUT"
+          echo "Computed tags: $TAGS"
 
       - name: Build and push to GHCR
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.compute.outputs.ghcr_tags }}
+          tags: ${{ steps.compute.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push to Docker Hub
-        if: github.repository == 'umami-software/umami'
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.compute.outputs.docker_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Summary
+        run: |
+          {
+            echo "## Deployed"
+            echo ""
+            echo '```'
+            echo "${{ steps.compute.outputs.tags }}" | tr ',' '\n'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
