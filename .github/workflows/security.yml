@@ -27,10 +27,12 @@ jobs:
         with:
           version: 10
 
+      # No `cache: pnpm` here: this job audits the lockfile and never runs
+      # `pnpm install`, so there is no store to save and the post-run cache step
+      # fails trying to find one.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       # Blocks on high/critical in *runtime* dependencies only. Vulnerabilities
       # reachable solely through jest, cypress or the rollup toolchain never
