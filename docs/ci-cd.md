@@ -2,11 +2,11 @@
 
 ## Pipelines
 
-| Workflow                              | Trigger                              | What it does                                   |
-| ------------------------------------- | ------------------------------------ | ---------------------------------------------- |
-| [`ci.yml`](../.github/workflows/ci.yml)             | PRs to `master`, pushes to `feature/**` | lint → typecheck → test+coverage → build       |
-| [`cd.yml`](../.github/workflows/cd.yml)             | push to `master`, `v*.*.*` tags      | runs `ci.yml`, then builds and pushes the image |
-| [`security.yml`](../.github/workflows/security.yml) | PRs, pushes to `master`, weekly       | dependency audit, secret scan, CodeQL          |
+| Workflow                              | Trigger                                       | What it does                                   |
+| ------------------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| [`ci.yml`](../.github/workflows/ci.yml)             | pushes to `develop`/`feature/**`, PRs to `master` | lint → typecheck → test+coverage → build       |
+| [`cd.yml`](../.github/workflows/cd.yml)             | push to `master`, `v*.*.*` tags               | runs `ci.yml`, then builds and pushes the image |
+| [`security.yml`](../.github/workflows/security.yml) | PRs, pushes to `master`, weekly                | dependency audit, secret scan, CodeQL          |
 
 `cd.yml` does not re-declare the checks — it calls `ci.yml` as a reusable
 workflow. "CI is green" and "we shipped it" therefore refer to the same checks by
@@ -19,11 +19,12 @@ ones.
 ## Branch flow
 
 ```
-feature/my-thing  ──PR──▶  master  ──▶  CI gate  ──▶  ghcr.io image
+develop  ──PR──▶  master  ──▶  CI gate  ──▶  ghcr.io image
+feature/my-thing  ──┘
 ```
 
-- Branch from `master` as `feature/*`.
-- Open a PR. CI must be green and the PR must be reviewed to merge.
+- `develop` is the integration branch; `feature/*` branches off `master` also run CI.
+- Open a PR to `master`. CI must be green and the PR must be reviewed to merge.
 - Merging to `master` deploys automatically.
 
 Note the default branch here is `master`, not `main`.
